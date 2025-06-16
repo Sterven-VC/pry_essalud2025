@@ -25,7 +25,7 @@ from models.entities.Acta import Acta
 from models.entities.Noticia import Noticia
 from models.entities.Memoria import Memoria
 
-
+#CAMBIO PARA IGNORAR EL ENTORNO VIRTUAKL
 app = Flask(__name__)
 csrf = CSRFProtect(app)
 #db = MySQL(app)
