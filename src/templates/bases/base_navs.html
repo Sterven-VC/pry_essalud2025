@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Club de la Unión</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/mdi/css/materialdesignicons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/base/vendor.bundle.base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/img_logoCU1.png') }}">
+    {% block customCSS %}
+    {% endblock %}
+
+</head>
+
+<body>
+    <div class="container-scroller">
+        <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+            <div class="navbar-brand-wrapper d-flex justify-content-center">
+                <div class="navbar-brand-inner-wrapper d-flex justify-content-between align-items-center w-100">
+                    <a class="navbar-brand brand-logo" href="{{ url_for('home')}}"><img
+                            src="{{ url_for('static', filename='img/img_logoCU2.png') }}" alt="logo"
+                            style="width: 78%; height: auto;"></a>
+                    <a class="navbar-brand brand-logo-mini" href="{{ url_for('home')}}"><img
+                            src="{{ url_for('static', filename='img/img_logoCU1.png') }}" alt="logo"
+                            style="width: 100%; height: auto;"></a>
+                    <button class="navbar-toggler navbar-toggler align-self-center" type="button"
+                        data-toggle="minimize">
+                        <span class="mdi mdi-sort-variant"></span>
+                    </button>
+                </div>
+            </div>
+            <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
+                <ul class="navbar-nav navbar-nav-right">
+                    <li class="nav-item nav-profile dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" id="profileDropdown">
+                            <img src="{{ url_for('static', filename='img/user-circle.png') }}" alt="profile" />
+                            <span class="nav-profile-name">{{ current_user.fullname}}</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right navbar-dropdown"
+                            aria-labelledby="profileDropdown">
+                            <a class="dropdown-item" href="{{ url_for('logout') }}">
+                                <i class="mdi mdi-logout text-primary"></i>
+                                Salir
+                            </a>
+                        </div>
+                    </li>
+                </ul>
+                <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button"
+                    data-toggle="offcanvas">
+                    <span class="mdi mdi-menu"></span>
+                </button>
+            </div>
+        </nav>
+        <div class="container-fluid page-body-wrapper">
+            <nav class="sidebar sidebar-offcanvas" id="sidebar">
+                <ul class="nav" style="display: flex; align-items: safe;">
+                    <br>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('home') }}">
+                            <i class="mdi mdi-home menu-icon"></i>
+                            <span class="menu-title">Home</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('junta_directiva') }}">
+                            <i class="mdi mdi-content-paste menu-icon"></i>
+                            <span class="menu-title">Junta Directiva</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('actas') }}">
+                            <i class="mdi mdi-view-headline menu-icon"></i>
+                            <span class="menu-title">Directorio</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('memorias') }}">
+                            <i class="mdi mdi-book-multiple menu-icon"></i>
+                            <span class="menu-title">Memorias</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('noticias') }}">
+                            <i class="mdi mdi-equal-box menu-icon"></i>
+                            <span class="menu-title">Noticias</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('profile') }}">
+                            <i class="mdi mdi-account menu-icon"></i>
+                            <span class="menu-title">Perfil</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="main-panel">
+                <!-- CONTENIDO VARIABLE -->
+                <div class="content-wrapper">
+                    {% block body %}
+                    {% endblock %}
+                </div>
+                <footer class="footer">
+                    <div class="d-sm-flex justify-content-center justify-content-sm-between">
+                        <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © <a
+                                href="http://www.usat.edu.pe" target="_blank">USAT </a>- Todos los derechos
+                            reservados</span>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- container-scroller -->
+    <script src="{{ url_for('static', filename='vendors/base/vendor.bundle.base.js') }}"></script>
+    <!-- canvas de opciones - vista - movil -->
+    <script src="{{ url_for('static', filename='js/off-canvas.js') }}"></script>
+    <!-- Muestra contenido cuando la barra de opciones esta plegado -->
+    <script src="{{ url_for('static', filename='js/hoverable-collapse.js') }}"></script>
+    <!-- Funcionalidad de plegar menu de opciones -->
+    <script src="{{ url_for('static', filename='js/template.js') }}"></script>
+</body>
+
+</html>

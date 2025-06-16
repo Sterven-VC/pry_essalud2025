@@ -1,0 +1,180 @@
+{% extends './bases/base_navs.html' %}
+
+{% block body %}
+<div style="margin-bottom: 10px; margin-top: -20px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                data-bs-target="#modal_añadir"><strong>Añadir Noticia</strong></button>
+
+            <!-- Modal para Añadir -->
+            <form action="{{ url_for('register_noticia') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal fade" id="modal_añadir" tabindex="-1" aria-labelledby="modal_añadirLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="modal_añadirLabel">Añadir Noticia</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label for="titulo">Título</label>
+                                    <input type="text" class="form-control" id="titulo" name="titulo"
+                                        placeholder="Título">
+                                </div>
+                                <div class="form-group">
+                                    <label for="fecha_noticia">Fecha</label>
+                                    <input type="date" class="form-control" id="fecha_noticia" name="fecha_noticia">
+                                </div>
+                                <div class="form-group">
+                                    <label for="file">Añadir Foto</label>
+                                    <input type="file" class="form-control" id="file" name="file"
+                                        accept=".png, .jpg, .jpeg">
+                                </div>
+                                <div class="form-group">
+                                    <label for="description">Descripción</label>
+                                    <input type="text" class="form-control" id="description" name="description"
+                                        placeholder="Descripción">
+                                </div>
+                                <div class="form-group">
+                                    <label for="information">Información</label>
+                                    <textarea class="form-control" id="information" name="information" rows="5"
+                                        placeholder="Información detallada"></textarea>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
+                                <button type="submit" class="btn btn-success">Añadir</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <br />
+            {% for message in messages %}
+            <div class="alert alert-primary alert-dismissible" role="alert">
+                <strong>{{ message }}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 10px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center table-responsive">
+            <h1 class="card-title"><strong>Noticias</strong></h1>
+            <table class="table table-hover">
+                <thead style="text-align: center;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Fecha</th>
+                        <th>Descripción</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for noticia in noticias %}
+                    <tr>
+                        <td>{{ noticia.id }}</td>
+                        <td>{{ noticia.titulo }}</td>
+                        <td>{{ noticia.fecha_noticia }}</td>
+                        <td>{{ noticia.description }}</td>
+                        <td style="text-align: center; align-items: center;">
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    Acciones
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li>
+                                        <button type="button" class="dropdown-item" data-bs-toggle="modal"
+                                            data-bs-target="#modal_editar"
+                                            onclick="loadData('{{ noticia.id }}')">Actualizar</button>
+                                    </li>
+                                    <li>
+                                        <form action="{{ url_for('delete_noticia', id=noticia.id) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item">Eliminar</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Editar -->
+<form action="{{ url_for('update_noticia') }}" method="POST" enctype="multipart/form-data">
+    <div class="modal fade" id="modal_editar" tabindex="-1" aria-labelledby="modal_editarLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal_editarLabel">Editar Noticia</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id" name="id">
+                    <div class="form-group">
+                        <label for="edit_titulo">Título</label>
+                        <input type="text" class="form-control" id="edit_titulo" name="titulo" placeholder="Título">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_fecha_noticia">Fecha</label>
+                        <input type="date" class="form-control" id="edit_fecha_noticia" name="fecha_noticia">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_file">Añadir Foto</label>
+                        <input type="file" class="form-control" id="edit_file" name="file" accept=".png, .jpg, .jpeg">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_description">Descripción</label>
+                        <input type="text" class="form-control" id="edit_description" name="description"
+                            placeholder="Descripción">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_information">Información</label>
+                        <textarea class="form-control" id="edit_information" name="information" rows="5"
+                            placeholder="Información detallada"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
+                    <button type="submit" class="btn btn-success">Actualizar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    function loadData(id) {
+        fetch(`/noticias/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('edit_id').value = data.id;
+                document.getElementById('edit_titulo').value = data.titulo;
+                document.getElementById('edit_fecha_noticia').value = data.fecha_noticia.split('T')[0];
+                document.getElementById('edit_description').value = data.description;
+                document.getElementById('edit_information').value = data.information;
+                // No necesitamos cargar el archivo de la foto en el campo de archivo ya que eso no es posible
+            });
+    }
+
+</script>
+{% endblock %}

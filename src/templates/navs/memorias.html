@@ -1,0 +1,150 @@
+{% extends './bases/base_navs.html' %}
+
+{% block body %}
+<div style="margin-bottom: 10px; margin-top: -20px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal_añadir"><strong>Añadir Memoria</strong></button>
+
+            <!-- Modal para Añadir -->
+            <form action="{{ url_for('register_Memorias') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal fade" id="modal_añadir" tabindex="-1" aria-labelledby="modal_añadirLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="modal_añadirLabel">Añadir Memoria</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label for="nombre">Nombre</label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Nombre">
+                                </div>
+                                <div class="form-group">
+                                    <label for="anio">Año</label>
+                                    <input type="text" class="form-control" id="anio" name="anio">
+                                </div>
+                                <div class="form-group">
+                                    <label for="file">Archivo PDF</label>
+                                    <input type="file" class="form-control" id="file" name="file" accept=".pdf">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
+                                <button type="submit" class="btn btn-success">Añadir</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <br />
+            {% for message in messages %}
+            <div class="alert alert-primary alert-dismissible" role="alert">
+                <strong>{{ message }}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 10px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center table-responsive">
+            <h1 class="card-title"><strong>Registros</strong></h1>
+            <table class="table table-hover">
+                <thead style="text-align: center;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Año</th>
+                        <th>Directiva</th>
+                        <th>Archivo PDF</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for memoria in memorias %}
+                    <tr>
+                        <td>{{ memoria.id }}</td>
+                        <td>{{ memoria.nombre }}</td>
+                        <td>{{ memoria.anio }}</td>
+                        <td>{{ memoria.id_directiva }}</td>
+                        <td style="text-align: center;"><a href="{{ url_for('download_memoria', id=memoria.id) }}">Descargar PDF</a></td>
+                        <td style="text-align: center; align-items: center;">
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Acciones
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li>
+                                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modal_editar" onclick="loadData('{{ memoria.id }}')">Actualizar</button>
+                                    </li>
+                                    <li>
+                                        <form action="{{ url_for('delete_Memoria', id=memoria.id) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item">Eliminar</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Editar -->
+<form action="{{ url_for('update_Memoria') }}" method="POST" enctype="multipart/form-data">
+    <div class="modal fade" id="modal_editar" tabindex="-1" aria-labelledby="modal_editarLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal_editarLabel">Editar Memoria</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id" name="id">
+                    <div class="form-group">
+                        <label for="edit_nombre">Nombre</label>
+                        <input type="text" class="form-control" id="edit_nombre" name="nombre" placeholder="Nombre">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_anio">Año</label>
+                        <input type="text" class="form-control" id="edit_anio" name="anio" placeholder="Año">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_file">Archivo PDF</label>
+                        <input type="file" class="form-control" id="edit_file" name="file" accept=".pdf">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
+                    <button type="submit" class="btn btn-success">Actualizar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    function loadData(id) {
+        fetch(`/memorias/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('edit_id').value = data.id;
+                document.getElementById('edit_nombre').value = data.nombre;
+                document.getElementById('edit_anio').value = data.anio;
+                // No es necesario cargar el campo de directiva porque se selecciona automáticamente
+            });
+    }
+</script>
+{% endblock %}

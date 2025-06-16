@@ -1,0 +1,189 @@
+{% extends './bases/base_navs.html' %}
+
+{% block body %}
+<div style="margin-bottom: 10px; margin-top: -20px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                data-bs-target="#modal_añadir"><strong>Añadir Directorio</strong></button>
+            <!-- Modal para Añadir -->
+            <form action="{{ url_for('register_Actas') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal fade" id="modal_añadir" tabindex="-1" aria-labelledby="modal_añadirLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="modal_añadirLabel">Añadir Directorio</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label for="nombre">Nombre</label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre"
+                                        placeholder="Nombre">
+                                </div>
+                                <div class="form-group">
+                                    <label for="fecha">Fecha</label>
+                                    <input type="date" class="form-control" id="fecha" name="fecha">
+                                </div>
+                                <div class="row">
+                                    <h1 class="card-title">Asistencia</h1>
+                                    {% for miembro in miembros %}
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <input class="form-check-input" type="checkbox"
+                                                name="asistencia_{{ loop.index }}" id="asistencia_{{ loop.index }}">
+                                            <label class="form-check-label" for="asistencia_{{ loop.index }}">
+                                                {{ miembro.nombre }} - {{ miembro.cargo }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="file">Archivo PDF - Acta</label>
+                                    <input type="file" class="form-control" id="file" name="file" accept=".pdf">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
+                                <button type="submit" class="btn btn-success">Añadir</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <br />
+            {% for message in messages %}
+            <div class="alert alert-primary alert-dismissible" role="alert">
+                <strong>{{ message }}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 10px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center table-responsive">
+            <h1 class="card-title"><strong>Registros</strong></h1>
+            <table class="table table-hover">
+                <thead style="text-align: center;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Fecha</th>
+                        <th>Archivo PDF</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for acta in actas %}
+                    <tr>
+                        <td>{{ acta.id }}</td>
+                        <td>{{ acta.nombre }}</td>
+                        <td>{{ acta.fecha }}</td>
+                        <td style="text-align: center;"><a href="{{ url_for('download_file', id=acta.id) }}">Descargar
+                                PDF</a></td>
+                        <td style="text-align: center;">{{ acta.status }}</td> <!-- Mostrar el estado aquí -->
+                        <td style="text-align: center; align-items: center;">
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    Acciones
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li>
+                                        <button type="button" class="dropdown-item" data-bs-toggle="modal"
+                                            data-bs-target="#modal_editar"
+                                            onclick="loadData('{{ acta.id }}')">Actualizar</button>
+                                    </li>
+                                    <li>
+                                        <form action="{{ url_for('delete_Acta', id=acta.id) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item">Eliminar</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Editar -->
+<form action="{{ url_for('update_Acta') }}" method="POST" enctype="multipart/form-data">
+
+    <div class="modal fade" id="modal_editar" tabindex="-1" aria-labelledby="modal_editarLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal_editarLabel">Editar Directorio</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id" name="id">
+                    <div class="form-group">
+                        <label for="edit_nombre">Nombre</label>
+                        <input type="text" class="form-control" id="edit_nombre" name="nombre" placeholder="Nombre">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_fecha">Fecha</label>
+                        <input type="date" class="form-control" id="edit_fecha" name="fecha">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_file">Archivo PDF</label>
+                        <input type="file" class="form-control" id="edit_file" name="file" accept=".pdf">
+                    </div>
+                    <input type="checkbox" class="form-check-input" id="edit_asistencia1" name="asistencia_1" hidden>
+                    <input type="checkbox" class="form-check-input" id="edit_asistencia2" name="asistencia_2" hidden>
+                    <input type="checkbox" class="form-check-input" id="edit_asistencia3" name="asistencia_3" hidden>
+                    <input type="checkbox" class="form-check-input" id="edit_asistencia4" name="asistencia_4" hidden>
+                    <input type="checkbox" class="form-check-input" id="edit_asistencia5" name="asistencia_5" hidden>
+                    <input type="checkbox" class="form-check-input" id="edit_asistencia6" name="asistencia_6" hidden>
+                    <input type="checkbox" class="form-check-input" id="edit_asistencia7" name="asistencia_7" hidden>
+                    <input type="checkbox" class="form-check-input" id="edit_asistencia8" name="asistencia_8" hidden>
+                </div>
+                <div class="modal-footer">
+                    <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
+                    <button type="submit" class="btn btn-success">Actualizar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    function loadData(id) {
+        fetch(`/actas/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('edit_id').value = data.id;
+                document.getElementById('edit_nombre').value = data.nombre;
+                document.getElementById('edit_fecha').value = data.fecha;
+                document.getElementById('edit_asistencia1').checked = data.asistencia_1;
+                document.getElementById('edit_asistencia2').checked = data.asistencia_2;
+                document.getElementById('edit_asistencia3').checked = data.asistencia_3;
+                document.getElementById('edit_asistencia4').checked = data.asistencia_4;
+                document.getElementById('edit_asistencia5').checked = data.asistencia_5;
+                document.getElementById('edit_asistencia6').checked = data.asistencia_6;
+                document.getElementById('edit_asistencia7').checked = data.asistencia_7;
+                document.getElementById('edit_asistencia8').checked = data.asistencia_8;
+
+            });
+    }
+</script>
+{% endblock %}

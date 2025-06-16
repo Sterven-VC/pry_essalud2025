@@ -1,0 +1,233 @@
+{% extends './bases/base_navs.html' %}
+
+{% block body %}
+<div style="margin-bottom: 10px; margin-top: -20px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                data-bs-target="#modal_añadir"><strong>Añadir Junta Directiva</strong></button>
+
+            <!-- Modal para Añadir -->
+            <form action="{{ url_for('register_JuntaDirectiva') }}" method="POST">
+                <div class="modal fade" id="modal_añadir" tabindex="-1" aria-labelledby="modal_añadirLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="modal_añadirLabel">Añadir Junta Directiva</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label for="nombre">Nombre</label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre"
+                                        placeholder="Nombre">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="fecha_inicio">Fecha Inicio</label>
+                                            <input type="date" class="form-control" id="fecha_inicio"
+                                                name="fecha_inicio">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="fecha_fin">Fecha Fin</label>
+                                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% for i in range(1, 9) %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="miembro{{ i }}">Miembro {{ i }}</label>
+                                            <input type="text" class="form-control" id="miembro{{ i }}"
+                                                name="miembro{{ i }}" placeholder="Miembro {{ i }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="cargo{{ i }}">Cargo</label>
+                                            <select name="cargo{{ i }}" id="cargo{{ i }}" class="form-select">
+                                                <option value="Presidente">Presidente</option>
+                                                <option value="Vice-Presidente">Vice Presidente</option>
+                                                <option value="Director-Gerente">Director Gerente</option>
+                                                <option value="Director">Director</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                <div class="form-group">
+                                    <input type="checkbox" class="form-check-input" id="vigencia" name="vigencia">
+                                    <label class="form-check-label" for="vigencia">Vigente</label>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
+                                <button type="submit" class="btn btn-success">Añadir</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <br />
+            {% for message in messages %}
+            <div class="alert alert-primary alert-dismissible" role="alert">
+                <strong>{{ message }}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 10px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center table-responsive">
+            <h1 class="card-title"><strong>Registros</strong></h1>
+            <table class="table t.able-hover">
+                <thead style="text-align: center;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Junta directiva</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                        <th>Presidente</th>
+                        <th>Vice Presidente</th>
+                        <th>Vigente</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for juntas_directivas in juntas_directivas %}
+                    <tr>
+                        <td>{{ juntas_directivas.id }}</td>
+                        <td>{{ juntas_directivas.nombre }}</td>
+                        <td>{{ juntas_directivas.fecha_inicio }}</td>
+                        <td>{{ juntas_directivas.fecha_fin }}</td>
+                        <td>{{ juntas_directivas.miembro1 }}</td>
+                        <td>{{ juntas_directivas.miembro2 }}</td>
+                        <td>{{ 'Sí' if juntas_directivas.vigencia else 'No' }}</td>
+                        <td style="text-align: center; align-items: center;">
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    Acciones
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li>
+                                        <button type="button" class="dropdown-item" data-bs-toggle="modal"
+                                            data-bs-target="#modal_editar"
+                                            onclick="loadData('{{ juntas_directivas.id }}')">Actualizar</button>
+                                    </li>
+                                    <li>
+                                        <form action="{{ url_for('delete_JuntaDirectiva', id=juntas_directivas.id) }}"
+                                            method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item">Eliminar</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item"
+                                            href="{{ url_for('ver_junta', id=juntas_directivas.id) }}">Ver</a>
+
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Editar -->
+<form action="{{ url_for('update_JuntaDirectiva') }}" method="POST">
+    <div class="modal fade" id="modal_editar" tabindex="-1" aria-labelledby="modal_editarLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal_editarLabel">Editar Junta Directiva</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id" name="id">
+                    <div class="form-group">
+                        <label for="edit_nombre">Nombre</label>
+                        <input type="text" class="form-control" id="edit_nombre" name="nombre" placeholder="Nombre">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_fecha_inicio">Fecha Inicio</label>
+                        <input type="date" class="form-control" id="edit_fecha_inicio" name="fecha_inicio">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_fecha_fin">Fecha Fin</label>
+                        <input type="date" class="form-control" id="edit_fecha_fin" name="fecha_fin">
+                    </div>
+                    {% for i in range(1, 9) %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_miembro{{ i }}">Miembro {{ i }}</label>
+                                <input type="text" class="form-control" id="edit_miembro{{ i }}" name="miembro{{ i }}"
+                                    placeholder="Miembro {{ i }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_cargo{{ i }}">Cargo</label>
+                                <select name="cargo{{ i }}" id="edit_cargo{{ i }}" class="form-select">
+                                    <option value="Presidente">Presidente</option>
+                                    <option value="Vice-Presidente">Vice Presidente</option>
+                                    <option value="Director-Gerente">Director Gerente</option>
+                                    <option value="Director">Director</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <div class="form-group">
+                        <input type="checkbox" class="form-check-input" id="edit_vigencia" name="vigencia" >
+                        <label class="form-check-label" for="edit_vigencia">Vigente</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
+                    <button type="submit" class="btn btn-success">Actualizar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    function loadData(id) {
+        fetch(`/junta_directiva/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); // Verifica la estructura del objeto data
+                document.getElementById('edit_id').value = data.id;
+                document.getElementById('edit_nombre').value = data.nombre;
+                document.getElementById('edit_fecha_inicio').value = data.fecha_inicio;
+                document.getElementById('edit_fecha_fin').value = data.fecha_fin;
+                for (var i = 1; i <= 8; i++) {
+                    document.getElementById('edit_miembro' + i).value = data['miembro' + i];
+                    document.getElementById('edit_cargo' + i).value = data['cargo' + i];
+                }
+                document.getElementById('edit_vigencia').checked = data.vigencia;
+            });
+
+    }
+</script>
+{% endblock %}

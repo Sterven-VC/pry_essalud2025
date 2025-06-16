@@ -1,0 +1,86 @@
+{% extends './bases/base_navs.html' %}
+
+{% block body %}
+<div style="margin-bottom: 10px; margin-top: -20px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center">
+            <h1 class="card-title">Detalles de la Junta Directiva</h1>
+            <h2>{{ junta_directiva[1] if junta_directiva else 'No disponible' }}</h2>
+            <p><strong>Fecha Inicio:</strong> {{ junta_directiva[2] if junta_directiva else 'No disponible' }}</p>
+            <p><strong>Fecha Fin:</strong> {{ junta_directiva[3] if junta_directiva else 'No disponible' }}</p>
+            <p><strong>Vigente:</strong> {{ 'Sí' if junta_directiva[20] else 'No' }}</p>
+        </div>
+    </div>
+
+    
+</div>
+
+<div style="margin-bottom: 10px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center table-responsive">
+            <h1 class="card-title">Directorios</h1>
+            <table class="table table-striped">
+                <thead>
+                    <tr style="text-align: center;">
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Fecha</th>
+                        <th>Archivo - Acta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if actas %}
+                    {% for acta in actas %}
+                    <tr>
+                        <td>{{ acta[0] }}</td>
+                        <td>{{ acta[1] }}</td>
+                        <td>{{ acta[2] }}</td>
+                        <td style="text-align: center;"><a href="{{ url_for('download_file', id=acta[0]) }}">Descargar PDF</a></td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center">No se encontraron actas.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<div style="margin-bottom: 10px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center table-responsive">
+            <h1 class="card-title">Memoria</h1>
+            <table class="table table-striped">
+                <thead>
+                    <tr style="text-align: center;">
+                        <th>ID</th>
+                        <th>Descripción</th>
+                        <th>Año</th>
+                        <th>Archivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if memorias %}
+                    {% for memoria in memorias %}
+                    <tr>
+                        <td>{{ memoria[0] }}</td>
+                        <td>{{ memoria[1] }}</td>
+                        <td>{{ memoria[2] }}</td>
+                        <td style="text-align: center;"><a href="{{ url_for('download_memoria', id=memoria[0]) }}">Descargar PDF</a></td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center">No se encontraron memorias.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
