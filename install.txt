@@ -1,0 +1,3 @@
+py -3 -m venv .venv
+.venv\Scripts\activate
+pip install flask flask_wtf flask_login bcrypt pymysql flask_mysqldb 
