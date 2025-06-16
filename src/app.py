@@ -18,7 +18,7 @@ from models.ModelNoticia import ModelNoticia
 from models.ModelMemoria import ModelMemoria
 
 
-# Entities:
+# Entities:git
 from models.entities.User import User
 from models.entities.JuntaDirectiva import JuntaDirectiva
 from models.entities.Acta import Acta
