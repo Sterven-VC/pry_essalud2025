@@ -16,14 +16,16 @@ from models.ModelJuntaDirectiva import ModelJuntaDirectiva
 from models.ModelActa import ModelActa
 from models.ModelNoticia import ModelNoticia
 from models.ModelMemoria import ModelMemoria
-
-
+from models.ModelDepartamento import ModelDepartamento
+from models.ModelServicio import ModelServicio
 # Entities:git
 from models.entities.User import User
 from models.entities.JuntaDirectiva import JuntaDirectiva
 from models.entities.Acta import Acta
 from models.entities.Noticia import Noticia
 from models.entities.Memoria import Memoria
+from models.entities.Departamento import Departamento
+from models.entities.Servicio import Servicio
 
 #CAMBIO PARA IGNORAR EL ENTORNO VIRTUAKL
 app = Flask(__name__)
@@ -43,6 +45,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+#SIRVE PARA EL CURENT USER
 @login_manager_app.user_loader
 def load_user(id):
     return ModelUser.get_by_id(db, id)
@@ -54,12 +57,22 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        # Crea un objeto User con el username y password recibidos
         user = User(0, request.form['username'], request.form['password'])
+        
+        # Intentamos hacer login con el modelo
         logged_user = ModelUser.login(db, user)
-        if logged_user != None:
+        
+        if logged_user:
+            # Si la contraseña es válida, procedemos con el login
             if logged_user.password:
                 login_user(logged_user)
-                return redirect(url_for('home'))
+                
+                # Validación del username
+                if logged_user.username == 'stheff2001@gmail.com':
+                    return redirect(url_for('create_users'))  # Redirige al create_users si es el usuario específico
+                else:
+                    return redirect(url_for('home'))  # Redirige a home para cualquier otro usuario
             else:
                 flash("Invalid password...")
                 return render_template('auth/login.html')
@@ -68,8 +81,29 @@ def login():
             return render_template('auth/login.html')
     else:
         return render_template('auth/login.html')
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+@app.route('/home')
+@login_required
+def home():
+    return render_template('home.html')
+
+@app.route('/create_users')
+@login_required
+def create_users():
+    if current_user.username != 'stheff2001@gmail.com':  # Verificamos si el usuario logueado es el que queremos
+        return redirect(url_for('home'))  # Si no es, redirigimos a home
     
+    # Si el usuario es el correcto, cargamos la lista de usuarios
+    users = ModelUser.get_all_users(db)
+    return render_template('navs/create_user.html', users=users)
+
 @app.route('/register', methods=['GET', 'POST'])
+@login_required
 def register():
     if request.method == 'POST':
         username = request.form['username']
@@ -85,19 +119,172 @@ def register():
             new_user = User(0, username, password, fullname)
             result = ModelUser.register(db, new_user, confirm_password)
             if result:
-                flash("Registro exitoso. ¡Ahora puedes iniciar sesión!")
-                return redirect(url_for('login'))
-    return render_template('auth/register.html')
+                flash("Usuario creado")
+                return redirect(url_for('create_users'))
+    return render_template('navs/create_user.html', actas=actas)
 
-@app.route('/logout')
-def logout():
-    logout_user()
-    return redirect(url_for('login'))
-
-@app.route('/home')
+@app.route('/update_profile', methods=['POST'])
 @login_required
-def home():
-    return render_template('home.html')
+def update_profile():
+    id = request.form['id']
+    username = request.form['username']
+    fullname = request.form['fullname']
+    password = request.form['password']
+    confirm_password = request.form['confirm_password']
+
+    if not username or not fullname:
+        flash("Por favor, complete todos los campos obligatorios.")
+        return redirect(url_for('create_users'))
+    
+    if password and password != confirm_password:
+        flash("Las contraseñas no coinciden.")
+        return redirect(url_for('create_users'))
+
+    user = User(id, username, password, fullname)
+    result = ModelUser.update_profile(db, user)
+
+    if result:
+        flash("Perfil actualizado con éxito.")
+        return redirect(url_for('create_users'))
+
+    else:
+        flash("Error al actualizar el perfil.")
+        return redirect(url_for('create_users'))
+
+
+#OBTENER DATOS DEL USER PARA CARGAR SUS DATOS - NO SE CAMBIA EL NOMBRE POR TIEMPO
+@app.route('/create_users/<int:id>', methods=['GET'])
+@login_required
+def get_user(id):
+    user = ModelUser.get_by_id(db, id)
+    if user:
+        return jsonify({
+            'id': user.id,
+            'username': user.username,
+            'fullname': user.fullname
+        })
+    return jsonify({'error': 'User no encontrado'}), 404
+
+@app.route('/delete_user/<int:id>', methods=['POST'])
+@login_required
+def delete_user(id):
+    result = ModelUser.delete_user(db, id)
+    if result:
+        return redirect(url_for('create_users'))
+    else:
+        flash("Error al eliminar el user.")
+        return redirect(url_for('create_users'))
+
+#adminEssalud2025
+@app.route('/departamentos', methods=['GET'])
+@login_required
+def departamentos():
+    if current_user.username != 'stheff2001@gmail.com': 
+        return redirect (url_for('home'))
+    departamentos = ModelDepartamento.get_all_departamentos(db)
+    return render_template('navs/departamentos.html', departamentos=departamentos)
+
+@app.route('/register_departamento', methods=['POST'])
+@login_required
+def register_departamento():
+    nombre = request.form['nombre']
+    if ModelDepartamento.create_departamento(db, nombre):
+        return redirect (url_for('departamentos'))
+    else:
+        return redirect (url_for('departamentos'))
+    
+@app.route('/update_departamento', methods=['POST'])
+@login_required
+def update_departamento():
+    id = request.form['id']
+    nombre = request.form['nombre']
+    departamentos = Departamento(id, nombre)
+    result = ModelDepartamento.update_departamento(db, departamentos)    
+    if result:
+        return redirect(url_for('departamentos'))
+    else:
+        return redirect(url_for('departamentos'))
+
+@app.route('/departamentos/<int:id>', methods=['GET'])
+@login_required
+def get_departamentos(id):
+    departamentos = ModelDepartamento.get_departamento_by_id(db, id)
+    if departamentos:
+        return jsonify({
+            'id': departamentos.id,
+            'nombre': departamentos.nombre
+    })
+    return jsonify({'error': 'ID no encontrado'}), 404
+
+
+@app.route('/delete_departamento/<int:id>', methods=['POST'])
+@login_required
+def delete_departamento(id):
+    result = ModelDepartamento.delete_departamento(db, id)
+    if result:
+        return redirect(url_for('departamentos'))
+    else:
+        return redirect(url_for('departamentos'))
+    
+
+
+@app.route('/servicios', methods=['GET'])
+@login_required
+def servicios():
+    if current_user.username != 'stheff2001@gmail.com':
+        return redirect (url_for('home'))
+    servicios = ModelServicio.get_all_servicios(db)
+    departamentos = ModelDepartamento.get_all_departamentos(db)
+    departamento_dict = {departamento.id: departamento.nombre for departamento in departamentos}
+
+    return render_template('navs/servicios.html', servicios = servicios, departamento_dict=departamento_dict, departamentos= departamentos)
+
+@app.route('/register_servicio', methods=['POST'])
+@login_required
+def register_servicio():
+    nombre = request.form['nombre']
+    departamento_id = request.form['departamento_id']
+    if ModelServicio.create_servicio(db, nombre, departamento_id):
+        return redirect (url_for('servicios'))
+    else:
+        return redirect (url_for('servicios'))
+
+@app.route('/update_servicio', methods=['POST'])
+@login_required
+def update_servicio():
+    id = request.form['id']
+    nombre = request.form['nombre']
+    departamento_id = request.form['departamento_id']
+    servicios = Servicio(id, nombre, departamento_id)
+    result = ModelServicio.update_servicio(db, servicios)
+    if result:
+        return redirect (url_for('servicios'))
+    else:
+        return redirect (url_for('servicios'))
+
+
+@app.route('/servicios/<int:id>', methods=['GET'])
+@login_required
+def get_servicios(id):
+    servicios = ModelServicio.get_servicio_by_id(db, id)
+    if servicios:
+        return jsonify({
+            'id': servicios.id,
+            'departamento_id': servicios.departamento_id,
+            'nombre': servicios.nombre
+        })
+    return jsonify({'error': 'ID no encontrado'}), 404
+
+@app.route('/delete_servicio/<int:id>', methods=['POST'])
+@login_required
+def delete_servicio(id):
+    result = ModelServicio.delete_servicio(db,id)
+    if result:
+        return redirect(url_for('servicios'))
+    else:
+        return redirect(url_for('servicios'))
+
+####################################################################################################
 
 @app.route('/junta_directiva', methods=['GET'])
 @login_required
@@ -652,33 +839,7 @@ def profile():
     user = ModelUser.get_by_id(db, current_user.id)
     return render_template('navs/profile.html', user=user)
 
-@app.route('/update_profile', methods=['POST'])
-@login_required
-def update_profile():
-    username = request.form['username']
-    fullname = request.form['fullname']
-    password = request.form['password']
-    confirm_password = request.form['confirm_password']
 
-    if not username or not fullname:
-        flash("Por favor, complete todos los campos obligatorios.")
-        return redirect(url_for('profile'))
-    
-    if password and password != confirm_password:
-        flash("Las contraseñas no coinciden.")
-        return redirect(url_for('profile'))
-
-    user = User(current_user.id, username, password, fullname)
-    result = ModelUser.update_profile(db, user)
-
-    if result:
-        flash("Perfil actualizado con éxito.")
-        return redirect(url_for('profile'))
-
-    else:
-        flash("Error al actualizar el perfil.")
-
-    return redirect(url_for('profile'))
 
 @app.route('/protected')
 @login_required
@@ -698,4 +859,4 @@ if __name__ == '__main__':
     csrf.init_app(app)
     app.register_error_handler(401, status_401)
     app.register_error_handler(404, status_404)
-    app.run()
+    app.run(debug=True)

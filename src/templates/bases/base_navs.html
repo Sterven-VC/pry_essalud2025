@@ -5,11 +5,15 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Club de la Unión</title>
+    <title>Sistema Horario Essalud</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='vendors/mdi/css/materialdesignicons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendors/base/vendor.bundle.base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/img_logoCU1.png') }}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.css" />
+    <script src="https://cdn.datatables.net/2.3.2/js/dataTables.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     {% block customCSS %}
     {% endblock %}
 
@@ -21,7 +25,7 @@
             <div class="navbar-brand-wrapper d-flex justify-content-center">
                 <div class="navbar-brand-inner-wrapper d-flex justify-content-between align-items-center w-100">
                     <a class="navbar-brand brand-logo" href="{{ url_for('home')}}"><img
-                            src="{{ url_for('static', filename='img/img_logoCU2.png') }}" alt="logo"
+                            src="{{ url_for('static', filename='img/Logo_EsSalud.png') }}" alt="logo"
                             style="width: 78%; height: auto;"></a>
                     <a class="navbar-brand brand-logo-mini" href="{{ url_for('home')}}"><img
                             src="{{ url_for('static', filename='img/img_logoCU1.png') }}" alt="logo"
@@ -64,6 +68,26 @@
                             <span class="menu-title">Home</span>
                         </a>
                     </li>
+                    {% if current_user.username == 'stheff2001@gmail.com' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('create_users') }}">
+                            <i class="mdi mdi-content-paste menu-icon"></i>
+                            <span class="menu-title">Usuarios</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('departamentos') }}">
+                            <i class="mdi mdi-content-paste menu-icon"></i>
+                            <span class="menu-title">Departamentos</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('servicios') }}">
+                            <i class="mdi mdi-content-paste menu-icon"></i>
+                            <span class="menu-title">Servicios</span>
+                        </a>
+                    </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('junta_directiva') }}">
                             <i class="mdi mdi-content-paste menu-icon"></i>
@@ -121,6 +145,9 @@
     <script src="{{ url_for('static', filename='js/hoverable-collapse.js') }}"></script>
     <!-- Funcionalidad de plegar menu de opciones -->
     <script src="{{ url_for('static', filename='js/template.js') }}"></script>
+
+    <!-- Enlazar los archivos de DataTables CSS y JS -->
+
 </body>
 
 </html>
