@@ -1,0 +1,126 @@
+{% extends './bases/base_navs.html' %}
+
+{% block body %}
+<div style="margin-bottom: 10px; margin-top: -20px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                data-bs-target="#modal_añadir"><strong>Añadir Actividad</strong></button>
+            <!-- Modal para Añadir Actividad -->
+            <form action="{{ url_for('register_actividad') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal fade" id="modal_añadir" tabindex="-1" aria-labelledby="modal_añadirLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="modal_añadirLabel">Añadir Actividad</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Nombre de la Actividad -->
+                                <div class="form-group">
+                                    <label for="nombre">Nombre de la Actividad</label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre"
+                                        placeholder="Nombre de la actividad" required>
+                                </div>
+
+                                <!-- Select para Departamento -->
+                                <div class="form-group">
+                                    <label for="departamento_id">Seleccionar Departamento</label>
+                                    <select class="form-control" id="departamento_id" name="departamento_id" required>
+                                        <option value="">Seleccione un Departamento</option>
+                                        {% for departamento in departamentos %}
+                                        <option value="{{ departamento.id }}">{{ departamento.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Select para Servicio (se actualiza dinámicamente según el departamento) -->
+                                <div class="form-group">
+                                    <label for="servicio_id">Seleccionar Servicio</label>
+                                    <select id="servicio_id" name="servicio_id" class="form-control" required>
+                                        <option value="">Seleccione un Servicio</option>
+                                        {% for servicio in servicios %}
+                                        <option value="{{ servicio.id }}">{{ servicio.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
+                                <button type="submit" class="btn btn-success">Añadir</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <br />
+            {% for message in messages %}
+            <div class="alert alert-primary alert-dismissible" role="alert">
+                <strong>{{ message }}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</div>
+
+<div style="margin-bottom: 10px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center table-responsive">
+            <h1 class="card-title"><strong>Registros de Actividades</strong></h1>
+            <table class="table table-hover">
+                <thead style="text-align: center;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Servicio</th>
+                        <th>Departamento</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for actividad in actividades %}
+                    <tr>
+                        <td>{{ actividad.id }}</td>
+                        <td>{{ actividad.nombre }}</td>
+                        <td>{{ actividad.servicio_id }}</td> <!-- Aquí puedes mostrar el nombre del servicio -->
+                        <td>{{ actividad.departamento_id }}</td> <!-- Aquí puedes mostrar el nombre del departamento -->
+                        <td style="text-align: center; align-items: center;">
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    Acciones
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li>
+                                        <button type="button" class="dropdown-item" data-bs-toggle="modal"
+                                            data-bs-target="#modal_editar"
+                                            onclick="loadData('{{ actividad.id }}')">Actualizar</button>
+                                    </li>
+                                    <li>
+                                        <form action="{{ url_for('delete_actividad', id=actividad.id) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item">Eliminar</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

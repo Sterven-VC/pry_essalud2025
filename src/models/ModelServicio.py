@@ -74,5 +74,20 @@ class ModelServicio:
             return False
 
 
-
-
+    # Método para obtener los servicios de un departamento
+    @classmethod
+    def get_servicios_by_departamento(cls, db, departamento_id):
+        try:
+            cursor = db.cursor()
+            sql = 'SELECT * FROM servicio WHERE departamento_id = %s'
+            cursor.execute(sql, (departamento_id,))
+            results = cursor.fetchall()
+            servicios = []
+            for row in results:
+                servicio = Servicio(row[0], row[1], row[2])  # Ajusta según la estructura de tu entidad
+                servicios.append(servicio)
+            cursor.close()
+            return servicios
+        except Exception as ex:
+            flash('Error al obtener los servicios: ' + str(ex))
+            return []

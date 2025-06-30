@@ -1,9 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, flash , jsonify, send_from_directory, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash , jsonify, send_file
 from flask_mysqldb import MySQL
 from flask_wtf.csrf import CSRFProtect
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import config
-from werkzeug.security import generate_password_hash
 from db import get_connection
 
 import os
@@ -18,6 +17,7 @@ from models.ModelNoticia import ModelNoticia
 from models.ModelMemoria import ModelMemoria
 from models.ModelDepartamento import ModelDepartamento
 from models.ModelServicio import ModelServicio
+from models.ModelActividad import ModelActividad
 # Entities:git
 from models.entities.User import User
 from models.entities.JuntaDirectiva import JuntaDirectiva
@@ -26,6 +26,7 @@ from models.entities.Noticia import Noticia
 from models.entities.Memoria import Memoria
 from models.entities.Departamento import Departamento
 from models.entities.Servicio import Servicio
+from models.entities.Actividad import Actividad
 
 #CAMBIO PARA IGNORAR EL ENTORNO VIRTUAKL
 app = Flask(__name__)
@@ -283,6 +284,87 @@ def delete_servicio(id):
         return redirect(url_for('servicios'))
     else:
         return redirect(url_for('servicios'))
+    
+@app.route('/actividades', methods=['GET'])
+@login_required
+def actividades():
+    # Cargar todos los departamentos
+    departamentos = ModelDepartamento.get_all_departamentos(db)
+    print("Departamentos cargados:", departamentos)
+
+    # Si hay un departamento seleccionado, cargar sus secrvicios correspondientes
+    departamento_id = request.args.get('departamento_id')  # Usamos request.args para obtener parámetros de la URL
+    servicios = []
+    if departamento_id:
+        servicios = ModelServicio.get_servicios_by_departamento(db, departamento_id)
+        print("Servicios cargados:", servicios)
+
+    # Obtener todas las actividades
+    actividades = ModelActividad.get_all_actividades(db)
+    print("Actividades cargadas:", actividades)
+
+    # Pasamos solo los atributos necesarios (id y nombre) a la plantilla
+    departamentos_data = [{'id': depto.id, 'nombre': depto.nombre} for depto in departamentos]
+    servicios_data = [{'id': servicio.id, 'nombre': servicio.nombre} for servicio in servicios]
+
+    return render_template('navs/actividades.html', departamentos=departamentos_data, servicios=servicios_data, actividades=actividades)
+
+
+
+
+
+@app.route('/register_actividad', methods=['POST'])
+@login_required
+def register_actividad():
+    nombre = request.form['nombre']
+    servicio_id = request.form['servicio_id']
+    departamento_id = request.form['departamento_id']
+    
+    actividad = Actividad(0, nombre, servicio_id, departamento_id)  # ID es 0 porque será generado automáticamente
+    if ModelActividad.register_actividad(db, actividad):
+        flash('Actividad registrada correctamente.')
+        return redirect(url_for('actividades'))
+    else:
+        flash('Error al registrar la actividad.')
+        return redirect(url_for('actividades'))
+
+@app.route('/update_actividad', methods=['POST'])
+@login_required
+def update_actividad():
+    id = request.form['id']
+    nombre = request.form['nombre']
+    servicio_id = request.form['servicio_id']
+    departamento_id = request.form['departamento_id']
+    
+    actividad = Actividad(id, nombre, servicio_id, departamento_id)
+    if ModelActividad.update_actividad(db, actividad):
+        flash('Actividad actualizada correctamente.')
+        return redirect(url_for('actividades'))
+    else:
+        flash('Error al actualizar la actividad.')
+        return redirect(url_for('actividades'))
+
+@app.route('/delete_actividad/<int:id>', methods=['POST'])
+@login_required
+def delete_actividad(id):
+    if ModelActividad.delete_actividad(db, id):
+        flash('Actividad eliminada correctamente.')
+    else:
+        flash('Error al eliminar la actividad.')
+    return redirect(url_for('actividades'))
+
+@app.route('/actividades/<int:id>', methods=['GET'])
+@login_required
+def get_actividad(id):
+    actividad = ModelActividad.get_actividad_by_id(db, id)
+    if actividad:
+        return jsonify({
+            'id': actividad.id,
+            'nombre': actividad.nombre,
+            'servicio_id': actividad.servicio_id,
+            'departamento_id': actividad.departamento_id
+        })
+    return jsonify({'error': 'Actividad no encontrada'}), 404
 
 ####################################################################################################
 
