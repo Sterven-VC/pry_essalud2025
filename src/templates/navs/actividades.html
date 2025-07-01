@@ -43,9 +43,6 @@
                                     <label for="servicio_id">Seleccionar Servicio</label>
                                     <select id="servicio_id" name="servicio_id" class="form-control" required>
                                         <option value="">Seleccione un Servicio</option>
-                                        {% for servicio in servicios %}
-                                        <option value="{{ servicio.id }}">{{ servicio.nombre }}</option>
-                                        {% endfor %}
                                     </select>
                                 </div>
                             </div>
@@ -58,6 +55,59 @@
                     </div>
                 </div>
             </form>
+
+            <!-- Modal para Editar Actividad -->
+            <form action="{{ url_for('update_actividad') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal fade" id="modal_editar" tabindex="-1" aria-labelledby="modal_editarLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" id="edit_id" name="id">
+
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="modal_editarLabel">Editar Actividad</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Nombre de la Actividad -->
+                                <div class="form-group">
+                                    <label for="edit_nombre">Nombre de la Actividad</label>
+                                    <input type="text" class="form-control" id="edit_nombre" name="nombre"
+                                        placeholder="Nombre de la actividad" required>
+                                </div>
+
+                                <!-- Select para Departamento -->
+                                <div class="form-group">
+                                    <label for="edit_departamento_id">Seleccionar Departamento</label>
+                                    <select class="form-control" id="edit_departamento_id" name="departamento_id"
+                                        required>
+                                        <option value="">Seleccione un Departamento</option>
+                                        {% for departamento in departamentos %}
+                                        <option value="{{ departamento.id }}">{{ departamento.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Select para Servicio (se actualiza dinámicamente según el departamento) -->
+                                <div class="form-group">
+                                    <label for="edit_servicio_id">Seleccionar Servicio</label>
+                                    <select id="edit_servicio_id" name="servicio_id" class="form-control" required>
+                                        <option value="">Seleccione un Servicio</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
+                                <button type="submit" class="btn btn-success">Actualizar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
             {% with messages = get_flashed_messages() %}
             {% if messages %}
             <br />
@@ -82,8 +132,8 @@
                     <tr>
                         <th>ID</th>
                         <th>Nombre</th>
-                        <th>Servicio</th>
-                        <th>Departamento</th>
+                        <th>Servicio ID</th>
+                        <th>Departamento ID</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -92,8 +142,8 @@
                     <tr>
                         <td>{{ actividad.id }}</td>
                         <td>{{ actividad.nombre }}</td>
-                        <td>{{ actividad.servicio_id }}</td> <!-- Aquí puedes mostrar el nombre del servicio -->
-                        <td>{{ actividad.departamento_id }}</td> <!-- Aquí puedes mostrar el nombre del departamento -->
+                        <td>{{ actividad.servicio_id }}</td>
+                        <td>{{ actividad.departamento_id }}</td>
                         <td style="text-align: center; align-items: center;">
                             <div class="dropdown">
                                 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
@@ -122,5 +172,53 @@
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function cargarServicios(departamentoId, targetSelect, selectedId = null) {
+            targetSelect.innerHTML = '<option value="">Seleccione un Servicio</option>';
+            if (departamentoId) {
+                fetch(`/get_servicios_by_departamento/${departamentoId}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        (data.servicios || []).forEach(servicio => {
+                            const option = document.createElement('option');
+                            option.value = servicio.id;
+                            option.textContent = servicio.nombre;
+                            if (selectedId && servicio.id == selectedId) option.selected = true;
+                            targetSelect.appendChild(option);
+                        });
+                    });
+            }
+        }
+
+        // Añadir actividad
+        const departamentoSelect = document.getElementById('departamento_id');
+        const servicioSelect = document.getElementById('servicio_id');
+        if (departamentoSelect && servicioSelect) {
+            departamentoSelect.addEventListener('change', function () {
+                cargarServicios(this.value, servicioSelect);
+            });
+        }
+
+        // Editar actividad
+        const editDepartamentoSelect = document.getElementById('edit_departamento_id');
+        const editServicioSelect = document.getElementById('edit_servicio_id');
+        window.loadData = function (id) {
+            fetch(`/actividades/${id}`)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('edit_id').value = data.id;
+                    document.getElementById('edit_nombre').value = data.nombre;
+                    editDepartamentoSelect.value = data.departamento_id;
+                    cargarServicios(data.departamento_id, editServicioSelect, data.servicio_id);
+                });
+        };
+        if (editDepartamentoSelect && editServicioSelect) {
+            editDepartamentoSelect.addEventListener('change', function () {
+                cargarServicios(this.value, editServicioSelect);
+            });
+        }
+    });
+</script>
 
 {% endblock %}

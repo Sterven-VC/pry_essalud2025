@@ -284,34 +284,28 @@ def delete_servicio(id):
         return redirect(url_for('servicios'))
     else:
         return redirect(url_for('servicios'))
-    
+
+@app.route('/get_servicios_by_departamento/<int:departamento_id>', methods=['GET'])
+@login_required
+def get_servicios_by_departamento(departamento_id):
+    servicios = ModelServicio.get_servicios_by_departamento(db, departamento_id)
+    if servicios:
+        servicios_data = [{'id': s.id, 'departamento_id': s.departamento_id, 'nombre': s.nombre} for s in servicios]
+        return jsonify({'servicios': servicios_data})
+    return jsonify({'error': 'ID no encontrado'}), 404
+
 @app.route('/actividades', methods=['GET'])
 @login_required
 def actividades():
     # Cargar todos los departamentos
     departamentos = ModelDepartamento.get_all_departamentos(db)
-    print("Departamentos cargados:", departamentos)
-
-    # Si hay un departamento seleccionado, cargar sus secrvicios correspondientes
-    departamento_id = request.args.get('departamento_id')  # Usamos request.args para obtener parámetros de la URL
-    servicios = []
-    if departamento_id:
-        servicios = ModelServicio.get_servicios_by_departamento(db, departamento_id)
-        print("Servicios cargados:", servicios)
-
-    # Obtener todas las actividades
+    
+    # Obtener todas las actividades (solo datos básicos)
     actividades = ModelActividad.get_all_actividades(db)
-    print("Actividades cargadas:", actividades)
-
+    
     # Pasamos solo los atributos necesarios (id y nombre) a la plantilla
-    departamentos_data = [{'id': depto.id, 'nombre': depto.nombre} for depto in departamentos]
-    servicios_data = [{'id': servicio.id, 'nombre': servicio.nombre} for servicio in servicios]
 
-    return render_template('navs/actividades.html', departamentos=departamentos_data, servicios=servicios_data, actividades=actividades)
-
-
-
-
+    return render_template('navs/actividades.html', departamentos=departamentos, actividades=actividades)
 
 @app.route('/register_actividad', methods=['POST'])
 @login_required
@@ -365,6 +359,8 @@ def get_actividad(id):
             'departamento_id': actividad.departamento_id
         })
     return jsonify({'error': 'Actividad no encontrada'}), 404
+
+
 
 ####################################################################################################
 

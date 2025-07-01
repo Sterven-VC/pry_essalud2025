@@ -25,12 +25,13 @@ class ModelServicio:
             results = cursor.fetchall()
             servicios = []
             for row in results:
-                servicio = Servicio(row[0], row[1], row[2])
+                servicio = Servicio(row[0], row[1], row[2])  # id, departamento_id, nombre
                 servicios.append(servicio)
             cursor.close()
             return servicios
         except Exception as ex:
             flash ('Error al listar servicios ' + str(ex))
+            return []
 
     @classmethod
     def get_servicio_by_id(cls,db,id):
@@ -52,7 +53,7 @@ class ModelServicio:
         try:
             cursor = db.cursor()
             sql = 'UPDATE servicio SET departamento_id=%s, nombre=%s WHERE id=%s'
-            cursor.execute(sql, (servicio.nombre, servicio.departamento_id, servicio.id))
+            cursor.execute(sql, (servicio.departamento_id, servicio.nombre, servicio.id))
             db.commit()
             cursor.close()
             return True
@@ -73,7 +74,6 @@ class ModelServicio:
             flash ('Error al borrar el servicio ' + str(ex))
             return False
 
-
     # Método para obtener los servicios de un departamento
     @classmethod
     def get_servicios_by_departamento(cls, db, departamento_id):
@@ -84,7 +84,8 @@ class ModelServicio:
             results = cursor.fetchall()
             servicios = []
             for row in results:
-                servicio = Servicio(row[0], row[1], row[2])  # Ajusta según la estructura de tu entidad
+                # El orden correcto según tu entidad y tu tabla es:
+                servicio = Servicio(row[0], row[1], row[2])  # id, departamento_id, nombre
                 servicios.append(servicio)
             cursor.close()
             return servicios
