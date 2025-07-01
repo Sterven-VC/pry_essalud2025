@@ -71,57 +71,39 @@
                     {% if current_user.username == 'stheff2001@gmail.com' %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('create_users') }}">
-                            <i class="mdi mdi-content-paste menu-icon"></i>
+                            <i class="mdi mdi-account-multiple menu-icon"></i>
                             <span class="menu-title">Usuarios</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('departamentos') }}">
-                            <i class="mdi mdi-content-paste menu-icon"></i>
+                            <i class="mdi mdi-domain menu-icon"></i>
                             <span class="menu-title">Departamentos</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('servicios') }}">
-                            <i class="mdi mdi-content-paste menu-icon"></i>
+                            <i class="mdi mdi-briefcase-check menu-icon"></i>
                             <span class="menu-title">Servicios</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('actividades') }}">
-                            <i class="mdi mdi-content-paste menu-icon"></i>
+                            <i class="mdi mdi-calendar-check menu-icon"></i>
                             <span class="menu-title">Actividades</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('doctores') }}">
+                            <i class="mdi mdi-calendar-check menu-icon"></i>
+                            <span class="menu-title">Doctores</span>
                         </a>
                     </li>
                     {% endif %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('junta_directiva') }}">
-                            <i class="mdi mdi-content-paste menu-icon"></i>
-                            <span class="menu-title">Junta Directiva</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('actas') }}">
-                            <i class="mdi mdi-view-headline menu-icon"></i>
-                            <span class="menu-title">Directorio</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('memorias') }}">
-                            <i class="mdi mdi-book-multiple menu-icon"></i>
-                            <span class="menu-title">Memorias</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('noticias') }}">
-                            <i class="mdi mdi-equal-box menu-icon"></i>
-                            <span class="menu-title">Noticias</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('profile') }}">
-                            <i class="mdi mdi-account menu-icon"></i>
-                            <span class="menu-title">Perfil</span>
+                        <a class="nav-link" href="{{ url_for('asignaciones') }}">
+                            <i class="mdi mdi-calendar-check menu-icon"></i>
+                            <span class="menu-title">Asignaciones</span>
                         </a>
                     </li>
                 </ul>
@@ -135,7 +117,7 @@
                 <footer class="footer">
                     <div class="d-sm-flex justify-content-center justify-content-sm-between">
                         <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © <a
-                                href="http://www.usat.edu.pe" target="_blank">USAT </a>- Todos los derechos
+                                href="" target="_blank">Steven </a>- Todos los derechos
                             reservados</span>
                     </div>
                 </footer>

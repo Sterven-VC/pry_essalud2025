@@ -9,7 +9,7 @@ class ModelUser():
     def login(self, db, user):
         try:
             cursor = db.cursor()
-            sql = """SELECT id, username, password, fullname FROM user 
+            sql = """SELECT id, username, password, fullname, departamento_id FROM user 
                     WHERE username = '{}'""".format(user.username)
             cursor.execute(sql)
             row = cursor.fetchone()
@@ -18,7 +18,7 @@ class ModelUser():
                 provided_password = user.password.encode('utf-8')
                 is_valid_password = bcrypt.checkpw(provided_password, hashed_password)
                 if is_valid_password:
-                    user = User(row[0], row[1], row[2], row[3])
+                    user = User(row[0], row[1], row[2], row[3], row[4])
                     return user
                 else:
                     return None
@@ -31,11 +31,11 @@ class ModelUser():
     def get_by_id(self, db, id):
         try:
             cursor = db.cursor()
-            sql = "SELECT id, username, fullname FROM user WHERE id = {}".format(id)
+            sql = "SELECT id, username, fullname, departamento_id FROM user WHERE id = {}".format(id)
             cursor.execute(sql)
             row = cursor.fetchone()
             if row != None:
-                return User(row[0], row[1], None, row[2])
+                return User(row[0], row[1], None, row[2], row[3])
             else:
                 return None
         except Exception as ex:
@@ -53,7 +53,7 @@ class ModelUser():
             results = cursor.fetchall()
             user_data = []
             for row in results:
-                user_data_all = User(row[0], row[1], row[2], row[3])
+                user_data_all = User(row[0], row[1], row[2], row[3], row[4])
                 user_data.append(user_data_all)
             cursor.close()
             return user_data
@@ -72,10 +72,10 @@ class ModelUser():
             hashed_password = cls.hash_password(user.password)
             
             # Agrega el nuevo campo 'tipo_user' con valor predeterminado '0'
-            sql = """INSERT INTO user (username, password, fullname)
-                    VALUES (%s, %s, %s)"""
+            sql = """INSERT INTO user (username, password, fullname, departamento_id)
+                    VALUES (%s, %s, %s, %s)"""
             
-            cursor.execute(sql, (user.username, hashed_password, user.fullname))
+            cursor.execute(sql, (user.username, hashed_password, user.fullname, user.departamento_id))
             db.commit()
             cursor.close()
             return True
@@ -114,7 +114,7 @@ class ModelUser():
             cursor = db.cursor()
 
             # Iniciar la consulta SQL para actualizar los datos del usuario
-            sql = """UPDATE user SET username = %s, fullname = %s"""
+            sql = """UPDATE user SET username = %s, fullname = %s, departamento_id = %s"""
             
             # Añadir la contraseña a la consulta solo si se proporciona una nueva contraseña
             if user.password:
@@ -125,9 +125,9 @@ class ModelUser():
             
             # Los valores a pasar a la consulta
             if user.password:
-                values = (user.username, user.fullname, hashed_password, user.id)  # Incluye la contraseña si es proporcionada
+                values = (user.username, user.fullname, user.departamento_id, hashed_password, user.id)  # Incluye la contraseña si es proporcionada
             else:
-                values = (user.username, user.fullname, user.id)  # Sin la contraseña si no se proporciona
+                values = (user.username, user.fullname, user.departamento_id, user.id)  # Sin la contraseña si no se proporciona
 
             cursor.execute(sql, values)
             db.commit()

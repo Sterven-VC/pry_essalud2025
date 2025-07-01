@@ -4,6 +4,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import config
 from db import get_connection
+from datetime import timedelta, datetime
 
 import os
 from werkzeug.utils import secure_filename
@@ -18,6 +19,8 @@ from models.ModelMemoria import ModelMemoria
 from models.ModelDepartamento import ModelDepartamento
 from models.ModelServicio import ModelServicio
 from models.ModelActividad import ModelActividad
+from models.ModelDoctor import ModelDoctor
+from models.ModelAsignacionDoctorActividad import ModelAsignacionDoctorActividad
 # Entities:git
 from models.entities.User import User
 from models.entities.JuntaDirectiva import JuntaDirectiva
@@ -27,6 +30,8 @@ from models.entities.Memoria import Memoria
 from models.entities.Departamento import Departamento
 from models.entities.Servicio import Servicio
 from models.entities.Actividad import Actividad
+from models.entities.Doctor import Doctor
+from models.entities.AsignacionDoctorActividad import AsignacionDoctorActividad
 
 #CAMBIO PARA IGNORAR EL ENTORNO VIRTUAKL
 app = Flask(__name__)
@@ -59,7 +64,7 @@ def index():
 def login():
     if request.method == 'POST':
         # Crea un objeto User con el username y password recibidos
-        user = User(0, request.form['username'], request.form['password'])
+        user = User(0, request.form['username'], request.form['password'], 0 , 0)
         
         # Intentamos hacer login con el modelo
         logged_user = ModelUser.login(db, user)
@@ -96,12 +101,12 @@ def home():
 @app.route('/create_users')
 @login_required
 def create_users():
-    if current_user.username != 'stheff2001@gmail.com':  # Verificamos si el usuario logueado es el que queremos
-        return redirect(url_for('home'))  # Si no es, redirigimos a home
-    
-    # Si el usuario es el correcto, cargamos la lista de usuarios
+    if current_user.username != 'stheff2001@gmail.com':
+        return redirect(url_for('home'))
     users = ModelUser.get_all_users(db)
-    return render_template('navs/create_user.html', users=users)
+    departamentos = ModelDepartamento.get_all_departamentos(db)
+    departamento_dict = {d.id: d.nombre for d in departamentos}
+    return render_template('navs/create_user.html', users=users, departamentos=departamentos, departamento_dict=departamento_dict)
 
 @app.route('/register', methods=['GET', 'POST'])
 @login_required
@@ -111,18 +116,19 @@ def register():
         password = request.form['password']
         confirm_password = request.form['confirm_password']
         fullname = request.form['fullname']
-        if not username or not password or not confirm_password or not fullname:
+        departamento_id = request.form['departamento_id']
+        if not username or not password or not confirm_password or not fullname or not departamento_id:
             flash("Por favor, complete todos los campos.")
         elif password != confirm_password:
             flash("Las contraseñas no coinciden.")
         else:
-            # Crea un nuevo usuario y lo guarda en la base de datos
-            new_user = User(0, username, password, fullname)
+            new_user = User(0, username, password, fullname, departamento_id)
             result = ModelUser.register(db, new_user, confirm_password)
             if result:
                 flash("Usuario creado")
                 return redirect(url_for('create_users'))
-    return render_template('navs/create_user.html', actas=actas)
+    departamentos = ModelDepartamento.get_all_departamentos(db)
+    return render_template('navs/create_user.html', departamentos=departamentos)
 
 @app.route('/update_profile', methods=['POST'])
 @login_required
@@ -132,22 +138,18 @@ def update_profile():
     fullname = request.form['fullname']
     password = request.form['password']
     confirm_password = request.form['confirm_password']
-
-    if not username or not fullname:
+    departamento_id = request.form['departamento_id']
+    if not username or not fullname or not departamento_id:
         flash("Por favor, complete todos los campos obligatorios.")
         return redirect(url_for('create_users'))
-    
     if password and password != confirm_password:
         flash("Las contraseñas no coinciden.")
         return redirect(url_for('create_users'))
-
-    user = User(id, username, password, fullname)
+    user = User(id, username, password, fullname, departamento_id)
     result = ModelUser.update_profile(db, user)
-
     if result:
         flash("Perfil actualizado con éxito.")
         return redirect(url_for('create_users'))
-
     else:
         flash("Error al actualizar el perfil.")
         return redirect(url_for('create_users'))
@@ -162,7 +164,8 @@ def get_user(id):
         return jsonify({
             'id': user.id,
             'username': user.username,
-            'fullname': user.fullname
+            'fullname': user.fullname,
+            'departamento_id': user.departamento_id
         })
     return jsonify({'error': 'User no encontrado'}), 404
 
@@ -297,15 +300,12 @@ def get_servicios_by_departamento(departamento_id):
 @app.route('/actividades', methods=['GET'])
 @login_required
 def actividades():
-    # Cargar todos los departamentos
     departamentos = ModelDepartamento.get_all_departamentos(db)
-    
-    # Obtener todas las actividades (solo datos básicos)
     actividades = ModelActividad.get_all_actividades(db)
-    
-    # Pasamos solo los atributos necesarios (id y nombre) a la plantilla
-
-    return render_template('navs/actividades.html', departamentos=departamentos, actividades=actividades)
+    servicios = ModelServicio.get_all_servicios(db)
+    departamento_dict = {d.id: d.nombre for d in departamentos}
+    servicio_dict = {s.id: s.nombre for s in servicios}
+    return render_template('navs/actividades.html', departamentos=departamentos, actividades=actividades, departamento_dict=departamento_dict, servicio_dict=servicio_dict)
 
 @app.route('/register_actividad', methods=['POST'])
 @login_required
@@ -313,8 +313,9 @@ def register_actividad():
     nombre = request.form['nombre']
     servicio_id = request.form['servicio_id']
     departamento_id = request.form['departamento_id']
-    
-    actividad = Actividad(0, nombre, servicio_id, departamento_id)  # ID es 0 porque será generado automáticamente
+    hora_inicio = request.form.get('hora_inicio')
+    hora_fin = request.form.get('hora_fin')
+    actividad = Actividad(0, nombre, servicio_id, departamento_id, hora_inicio, hora_fin)
     if ModelActividad.register_actividad(db, actividad):
         flash('Actividad registrada correctamente.')
         return redirect(url_for('actividades'))
@@ -329,19 +330,22 @@ def update_actividad():
     nombre = request.form['nombre']
     servicio_id = request.form['servicio_id']
     departamento_id = request.form['departamento_id']
-    
-    actividad = Actividad(id, nombre, servicio_id, departamento_id)
+    hora_inicio = request.form.get('hora_inicio')
+    hora_fin = request.form.get('hora_fin')
+    actividad = Actividad(id, nombre, servicio_id, departamento_id, hora_inicio, hora_fin)
     if ModelActividad.update_actividad(db, actividad):
         flash('Actividad actualizada correctamente.')
         return redirect(url_for('actividades'))
     else:
         flash('Error al actualizar la actividad.')
         return redirect(url_for('actividades'))
-
+    
 @app.route('/delete_actividad/<int:id>', methods=['POST'])
 @login_required
 def delete_actividad(id):
-    if ModelActividad.delete_actividad(db, id):
+    # Llamar al método de ModelActividad para eliminar la actividad por su ID
+    result = ModelActividad.delete_actividad(db, id)
+    if result:
         flash('Actividad eliminada correctamente.')
     else:
         flash('Error al eliminar la actividad.')
@@ -352,15 +356,89 @@ def delete_actividad(id):
 def get_actividad(id):
     actividad = ModelActividad.get_actividad_by_id(db, id)
     if actividad:
+        # Si hora_inicio o hora_fin es un timedelta, convertir a string (HH:MM:SS)
+        def timedelta_to_str(td):
+            if isinstance(td, timedelta):
+                total_seconds = int(td.total_seconds())
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                seconds = total_seconds % 60
+                return f"{hours:02}:{minutes:02}:{seconds:02}"
+            return td
+        
+        # Si es un servicio y departamento relacionados, obtén sus nombres
+        servicio = ModelServicio.get_servicio_by_id(db, actividad.servicio_id) if actividad.servicio_id else None
+        departamento = ModelDepartamento.get_departamento_by_id(db, actividad.departamento_id) if actividad.departamento_id else None
+        
         return jsonify({
             'id': actividad.id,
             'nombre': actividad.nombre,
             'servicio_id': actividad.servicio_id,
-            'departamento_id': actividad.departamento_id
+            'departamento_id': actividad.departamento_id,
+            'hora_inicio': timedelta_to_str(actividad.hora_inicio),  # Conviértelo a string
+            'hora_fin': timedelta_to_str(actividad.hora_fin),  # Conviértelo a string
+            'servicio_nombre': servicio.nombre if servicio else 'Sin asignar',
+            'departamento_nombre': departamento.nombre if departamento else 'Sin asignar'
         })
     return jsonify({'error': 'Actividad no encontrada'}), 404
 
 
+@app.route('/doctores', methods=['GET'])
+@login_required
+def doctores():
+    doctores = ModelDoctor.get_all_doctores(db)
+    usuarios = ModelUser.get_all_users(db)
+    usuario_dict = {u.id: u.fullname for u in usuarios}
+    return render_template('navs/doctores.html', doctores=doctores, usuario_dict=usuario_dict, usuarios=usuarios)
+
+@app.route('/register_doctor', methods=['POST'])
+@login_required
+def register_doctor():
+    nombre = request.form['nombre']
+    id_usuario = request.form['id_usuario']
+    doctor = Doctor(0, nombre, id_usuario)
+    if ModelDoctor.create_doctor(db, doctor):
+        flash('Doctor registrado correctamente.')
+        return redirect(url_for('doctores'))
+    else:
+        flash('Error al registrar el doctor.')
+        return redirect(url_for('doctores'))
+
+@app.route('/update_doctor', methods=['POST'])
+@login_required
+def update_doctor():
+    id = request.form['id']
+    nombre = request.form['nombre']
+    id_usuario = request.form['id_usuario']
+    doctor = Doctor(id, nombre, id_usuario)
+    if ModelDoctor.update_doctor(db, doctor):
+        flash('Doctor actualizado correctamente.')
+        return redirect(url_for('doctores'))
+    else:
+        flash('Error al actualizar el doctor.')
+        return redirect(url_for('doctores'))
+
+@app.route('/delete_doctor/<int:id>', methods=['POST'])
+@login_required
+def delete_doctor(id):
+    if ModelDoctor.delete_doctor(db, id):
+        flash('Doctor eliminado correctamente.')
+        return redirect(url_for('doctores'))
+    else:
+        flash('Error al eliminar el doctor.')
+        return redirect(url_for('doctores'))
+
+@app.route('/doctores/<int:id>', methods=['GET'])
+@login_required
+def get_doctor(id):
+    doctor = ModelDoctor.get_doctor_by_id(db, id)
+    if doctor:
+        return jsonify({
+            'id': doctor.id,
+            'nombre': doctor.nombre,
+            'id_usuario': doctor.id_usuario
+        })
+    return jsonify({'error': 'Doctor no encontrado'}), 404
 
 ####################################################################################################
 
@@ -933,8 +1011,111 @@ def status_404(error):
 
 app.config.from_object(config['development'])
 
+@app.route('/asignaciones', methods=['GET'])
+@login_required
+def asignaciones():
+    mes_actual = datetime.now().strftime('%Y-%m')
+    # Obtener departamento asignado al usuario actual
+    departamentos = []
+    servicios = []
+    actividades = []
+    doctores = []
+    if hasattr(current_user, 'departamento_id') and current_user.departamento_id:
+        dep = ModelDepartamento.get_departamento_by_id(db, current_user.departamento_id)
+        if dep:
+            departamentos = [dep]
+            servicios = ModelServicio.get_servicios_by_departamento(db, dep.id)
+            actividades = []
+            for serv in servicios:
+                acts = ModelActividad.get_actividades_by_servicio(db, serv.id)
+                actividades.extend(acts)
+            doctores = ModelDoctor.get_doctores_by_departamento(db, dep.id)
+    if hasattr(current_user, 'id') and current_user.id:
+        doctores = ModelDoctor.get_doctores_by_usuario(db, current_user.id)
+    return render_template('navs/asignaciones.html', mes_actual=mes_actual, departamentos=departamentos, servicios=servicios, actividades=actividades, doctores=doctores)
+
+@app.route('/api/asignaciones', methods=['GET'])
+@login_required
+def api_get_asignaciones():
+    mes_str = request.args.get('mes')  # formato 'YYYY-MM'
+    if mes_str and '-' in mes_str:
+        anio, mes = map(int, mes_str.split('-'))
+    else:
+        return jsonify({'asignaciones': []})
+    asignaciones = ModelAsignacionDoctorActividad.get_asignaciones_by_mes(db, mes, anio)
+    # Formato: lista de dicts con actividad_id, doctor_id, fecha
+    return jsonify({'asignaciones': [
+        {'id': a.id, 'actividad_id': a.actividad_id, 'doctor_id': a.doctor_id, 'fecha': a.fecha.strftime('%Y-%m-%d')}
+        for a in asignaciones
+    ]})
+
+@app.route('/api/asignar_doctor', methods=['POST'])
+@login_required
+def api_asignar_doctor():
+    data = request.json
+    actividad_id = data.get('actividad_id')
+    doctor_id = data.get('doctor_id')
+    fecha = data.get('fecha')
+    try:
+        # Validar máximo 2 doctores por actividad/día
+        count = ModelAsignacionDoctorActividad.count_doctores_por_actividad_dia(db, actividad_id, fecha)
+        if count >= 2:
+            return jsonify({'success': False, 'message': 'Máximo 2 doctores por actividad en este día.'}), 400
+        asignacion = AsignacionDoctorActividad(0, doctor_id, actividad_id, fecha)
+        result = ModelAsignacionDoctorActividad.asignar_doctor(db, asignacion)
+        if result:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'message': 'Error al asignar doctor (DB insert falló).'}), 500
+    except Exception as ex:
+        import traceback
+        print('Error en api_asignar_doctor:', ex)
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Error interno: {str(ex)}'}), 500
+
+@app.route('/api/quitar_doctor', methods=['POST'])
+@login_required
+def api_quitar_doctor():
+    data = request.json
+    actividad_id = data.get('actividad_id')
+    doctor_id = data.get('doctor_id')
+    fecha = data.get('fecha')
+    result = ModelAsignacionDoctorActividad.quitar_doctor(db, actividad_id, doctor_id, fecha)
+    if result:
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'message': 'Error al quitar doctor.'}), 500
+
+@app.route('/api/actividades_by_servicio/<int:servicio_id>', methods=['GET'])
+@login_required
+def api_actividades_by_servicio(servicio_id):
+    actividades = ModelActividad.get_actividades_by_servicio(db, servicio_id)
+    # Incluir hora_inicio y hora_fin en la respuesta
+    return jsonify({'actividades': [
+        {
+            'id': a.id,
+            'nombre': a.nombre,
+            'hora_inicio': a.hora_inicio if a.hora_inicio else '',
+            'hora_fin': a.hora_fin if a.hora_fin else ''
+        } for a in actividades
+    ]})
+
+@app.route('/api/actividades', methods=['GET'])
+@login_required
+def api_actividades():
+    actividades = ModelActividad.get_all_actividades(db)
+    return jsonify({'actividades': [
+        {
+            'id': a.id,
+            'nombre': a.nombre,
+            'hora_inicio': a.hora_inicio if a.hora_inicio else '',
+            'hora_fin': a.hora_fin if a.hora_fin else ''
+        } for a in actividades
+    ]})
+
 if __name__ == '__main__':
     csrf.init_app(app)
     app.register_error_handler(401, status_401)
     app.register_error_handler(404, status_404)
     app.run(debug=True)
+

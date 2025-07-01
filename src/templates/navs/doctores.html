@@ -1,0 +1,144 @@
+{% extends './bases/base_navs.html' %}
+
+{% block body %}
+<div style="margin-bottom: 10px; margin-top: -20px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal_añadir"><strong>Añadir Doctor</strong></button>
+            <!-- Modal para Añadir Doctor -->
+            <form action="{{ url_for('register_doctor') }}" method="POST">
+                <div class="modal fade" id="modal_añadir" tabindex="-1" aria-labelledby="modal_añadirLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="modal_añadirLabel">Añadir Doctor</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label for="nombre">Nombre del Doctor</label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Nombre" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="id_usuario">Usuario Vinculado</label>
+                                    <select class="form-control" id="id_usuario" name="id_usuario" required>
+                                        <option value="">Seleccione un Usuario</option>
+                                        {% for usuario in usuarios %}
+                                        <option value="{{ usuario.id }}">{{ usuario.fullname }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
+                                <button type="submit" class="btn btn-success">Añadir</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <!-- Modal para Editar Doctor -->
+            <form action="{{ url_for('update_doctor') }}" method="POST">
+                <div class="modal fade" id="modal_editar" tabindex="-1" aria-labelledby="modal_editarLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" id="edit_id" name="id">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="modal_editarLabel">Editar Doctor</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label for="edit_nombre">Nombre del Doctor</label>
+                                    <input type="text" class="form-control" id="edit_nombre" name="nombre" placeholder="Nombre" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit_id_usuario">Usuario Vinculado</label>
+                                    <select class="form-control" id="edit_id_usuario" name="id_usuario" required>
+                                        <option value="">Seleccione un Usuario</option>
+                                        {% for usuario in usuarios %}
+                                        <option value="{{ usuario.id }}">{{ usuario.fullname }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
+                                <button type="submit" class="btn btn-success">Actualizar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <br />
+            {% for message in messages %}
+            <div class="alert alert-primary alert-dismissible" role="alert">
+                <strong>{{ message }}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 10px;">
+    <div class="card">
+        <div class="card-body justify-content-center align-items-center table-responsive">
+            <h1 class="card-title"><strong>Registros de Doctores</strong></h1>
+            <table class="table table-hover">
+                <thead style="text-align: center;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Usuario Vinculado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doctor in doctores %}
+                    <tr>
+                        <td>{{ doctor.id }}</td>
+                        <td>{{ doctor.nombre }}</td>
+                        <td>{{ usuario_dict[doctor.id_usuario]|default('Sin usuario') }}</td>
+                        <td style="text-align: center; align-items: center;">
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Acciones
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li>
+                                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modal_editar" onclick="loadData('{{ doctor.id }}')">Actualizar</button>
+                                    </li>
+                                    <li>
+                                        <form action="{{ url_for('delete_doctor', id=doctor.id) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item">Eliminar</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    function loadData(id) {
+        fetch(`/doctores/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('edit_id').value = data.id;
+                document.getElementById('edit_nombre').value = data.nombre;
+                document.getElementById('edit_id_usuario').value = data.id_usuario;
+            });
+    }
+</script>
+{% endblock %}

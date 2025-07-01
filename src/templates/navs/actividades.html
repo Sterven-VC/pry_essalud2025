@@ -13,21 +13,26 @@
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
                             <div class="modal-header">
                                 <h1 class="modal-title fs-5" id="modal_añadirLabel">Añadir Actividad</h1>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"
                                     aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <!-- Nombre de la Actividad -->
                                 <div class="form-group">
                                     <label for="nombre">Nombre de la Actividad</label>
                                     <input type="text" class="form-control" id="nombre" name="nombre"
                                         placeholder="Nombre de la actividad" required>
                                 </div>
-
-                                <!-- Select para Departamento -->
+                                <div class="form-group">
+                                    <label for="hora_inicio">Hora de Inicio</label>
+                                    <input type="time" class="form-control" id="hora_inicio" name="hora_inicio"
+                                        required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="hora_fin">Hora de Fin</label>
+                                    <input type="time" class="form-control" id="hora_fin" name="hora_fin" required>
+                                </div>
                                 <div class="form-group">
                                     <label for="departamento_id">Seleccionar Departamento</label>
                                     <select class="form-control" id="departamento_id" name="departamento_id" required>
@@ -37,8 +42,6 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-
-                                <!-- Select para Servicio (se actualiza dinámicamente según el departamento) -->
                                 <div class="form-group">
                                     <label for="servicio_id">Seleccionar Servicio</label>
                                     <select id="servicio_id" name="servicio_id" class="form-control" required>
@@ -46,7 +49,6 @@
                                     </select>
                                 </div>
                             </div>
-
                             <div class="modal-footer">
                                 <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
                                 <button type="submit" class="btn btn-success">Añadir</button>
@@ -71,14 +73,21 @@
                                     aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <!-- Nombre de la Actividad -->
                                 <div class="form-group">
                                     <label for="edit_nombre">Nombre de la Actividad</label>
                                     <input type="text" class="form-control" id="edit_nombre" name="nombre"
                                         placeholder="Nombre de la actividad" required>
                                 </div>
-
-                                <!-- Select para Departamento -->
+                                <div class="form-group">
+                                    <label for="edit_hora_inicio">Hora de Inicio</label>
+                                    <input type="time" class="form-control" id="edit_hora_inicio" name="hora_inicio"
+                                        required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit_hora_fin">Hora de Fin</label>
+                                    <input type="time" class="form-control" id="edit_hora_fin" name="hora_fin"
+                                        required>
+                                </div>
                                 <div class="form-group">
                                     <label for="edit_departamento_id">Seleccionar Departamento</label>
                                     <select class="form-control" id="edit_departamento_id" name="departamento_id"
@@ -89,8 +98,6 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-
-                                <!-- Select para Servicio (se actualiza dinámicamente según el departamento) -->
                                 <div class="form-group">
                                     <label for="edit_servicio_id">Seleccionar Servicio</label>
                                     <select id="edit_servicio_id" name="servicio_id" class="form-control" required>
@@ -98,7 +105,6 @@
                                     </select>
                                 </div>
                             </div>
-
                             <div class="modal-footer">
                                 <a type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</a>
                                 <button type="submit" class="btn btn-success">Actualizar</button>
@@ -132,8 +138,10 @@
                     <tr>
                         <th>ID</th>
                         <th>Nombre</th>
-                        <th>Servicio ID</th>
-                        <th>Departamento ID</th>
+                        <th>Hora Inicio</th>
+                        <th>Hora Fin</th>
+                        <th>Servicio</th>
+                        <th>Departamento</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -142,8 +150,10 @@
                     <tr>
                         <td>{{ actividad.id }}</td>
                         <td>{{ actividad.nombre }}</td>
-                        <td>{{ actividad.servicio_id }}</td>
-                        <td>{{ actividad.departamento_id }}</td>
+                        <td>{{ actividad.hora_inicio }}</td>
+                        <td>{{ actividad.hora_fin }}</td>
+                        <td>{{ servicio_dict[actividad.servicio_id]|default('Sin asignar') }}</td>
+                        <td>{{ departamento_dict[actividad.departamento_id]|default('Sin asignar') }}</td>
                         <td style="text-align: center; align-items: center;">
                             <div class="dropdown">
                                 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
@@ -209,6 +219,9 @@
                 .then(data => {
                     document.getElementById('edit_id').value = data.id;
                     document.getElementById('edit_nombre').value = data.nombre;
+                    // Ajuste para formato HH:MM
+                    document.getElementById('edit_hora_inicio').value = data.hora_inicio ? data.hora_inicio.substring(0,5) : '';
+                    document.getElementById('edit_hora_fin').value = data.hora_fin ? data.hora_fin.substring(0,5) : '';
                     editDepartamentoSelect.value = data.departamento_id;
                     cargarServicios(data.departamento_id, editServicioSelect, data.servicio_id);
                 });
