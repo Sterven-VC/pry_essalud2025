@@ -1,9 +1,10 @@
 {% extends './bases/base_navs.html' %}
+
 {% block head %}
 {{ super() }}
-<!-- CSRF token para AJAX -->
-<meta name="csrf-token" content="{{ csrf_token() }}">
+{# El meta tag CSRF debe estar solo en la base, no aquí #}
 {% endblock %}
+
 {% block body %}
 <div class="container mt-4">
     {% with messages = get_flashed_messages() %}
@@ -69,24 +70,41 @@
     $.ajaxSetup({
         beforeSend: function (xhr, settings) {
             if (settings.type === 'POST') {
-                const token = $('meta[name="csrf-token"]').attr('content');
+                let token = $('meta[name="csrf-token"]').attr('content');
+                if (!token || token === '') {
+                    // Intenta buscar el token en un input oculto (por si acaso)
+                    token = $("input[name='csrf_token']").val();
+                }
                 if (token) {
                     xhr.setRequestHeader('X-CSRFToken', token);
-                    xhr.setRequestHeader('X-CSRF-Token', token); // Compatibilidad extra
+                    xhr.setRequestHeader('X-CSRF-Token', token);
+                } else {
+                    mostrarFlash('No se encontró el token CSRF. Recargue la página.', 'danger');
                 }
             }
         }
     });
 
+    // Cambia la URL para cargar actividades filtradas
+    function cargarActividadesFiltradas() {
+        let departamentoId = $('#departamentoFiltro').val();
+        let servicioId = $('#servicioFiltro').val();
+        $.get('/api/actividades_filtradas', {
+            departamento_id: departamentoId || undefined,
+            servicio_id: servicioId || undefined
+        }, function (data) {
+            actividades = data.actividades;
+            renderizarMatriz();
+        });
+    }
+
     $(document).ready(function () {
-        cargarActividades();
+        cargarActividadesFiltradas();
         cargarDoctores();
         cargarCalendario();
 
         $('#mes').on('change', cargarCalendario);
         $('#doctorFiltro').on('change', renderizarMatriz);
-
-        // Filtros dependientes para selects
         $('#departamentoFiltro').on('change', function () {
             let depId = $(this).val();
             // Actualizar servicios
@@ -96,27 +114,12 @@
                 (data.servicios || []).forEach(s => select.append(`<option value="${s.id}">${s.nombre}</option>`));
                 select.trigger('change');
             });
+            cargarActividadesFiltradas();
         });
         $('#servicioFiltro').on('change', function () {
-            let servId = $(this).val();
-            if (servId) {
-                $.get(`/api/actividades_by_servicio/${servId}`, function (data) {
-                    actividades = (data.actividades || []);
-                    renderizarMatriz();
-                });
-            } else {
-                actividades = [];
-                renderizarMatriz();
-            }
+            cargarActividadesFiltradas();
         });
     });
-
-    function cargarActividades() {
-        $.get('/api/actividades', function (data) {
-            actividades = data.actividades;
-            renderizarMatriz();
-        });
-    }
 
     function cargarDoctores() {
         $.get('/api/doctores', function (data) {
@@ -141,7 +144,6 @@
         if (!mes) return;
         let [anio, mesNum] = mes.split('-');
         let diasMes = new Date(anio, mesNum, 0).getDate();
-        // Ordenar actividades por hora de inicio (y fin si existe)
         let actividadesFiltradas = actividades.slice().sort((a, b) => {
             if (a.hora_inicio && b.hora_inicio) {
                 return a.hora_inicio.localeCompare(b.hora_inicio);
@@ -149,8 +151,12 @@
             return 0;
         });
         let doctorFiltro = $('#doctorFiltro').val();
+        // Obtener el token CSRF del input oculto global (lo insertaremos abajo)
+        let csrfToken = $("input[name='csrf_token']").val() || $('meta[name="csrf-token"]').attr('content');
 
-        let html = '<table class="table table-bordered table-sm matriz-asignaciones">';
+        let html = '<form id="form-matriz">';
+        html += '<input type="hidden" name="csrf_token" value="' + csrfToken + '">';
+        html += '<table class="table table-bordered table-sm matriz-asignaciones">';
         html += '<thead><tr>';
         html += '<th>Actividad</th><th>Hora</th>';
         for (let d = 1; d <= diasMes; d++) {
@@ -175,19 +181,25 @@
                     return `<span class="badge badge-info mr-1">${doc ? doc.nombre : 'Doctor'}</span> <a href="#" class="text-danger quitar-doctor" data-actividad="${act.id}" data-fecha="${fecha}" data-doctor="${a.doctor_id}">&times;</a>`;
                 }).join('<br>');
                 let btnAdd = '';
-                // Solo mostrar el + si hay menos de 2 doctores y hay un doctor seleccionado en el filtro y no está ya asignado
-                if (asignados.length < 2 && doctorFiltro && !asignados.some(a => a.doctor_id == doctorFiltro)) {
-                    btnAdd = `<button class="btn btn-sm btn-success asignar-doctor" data-actividad="${act.id}" data-fecha="${fecha}">+</button>`;
+                if (
+                    asignados.length < 2 &&
+                    doctorFiltro &&
+                    !asignados.some(a => a.doctor_id == doctorFiltro)
+                ) {
+                    let doctorObj = doctores.find(d => d.id == doctorFiltro);
+                    if (doctorObj) {
+                        btnAdd = `<button type="submit" class="btn btn-sm btn-success asignar-doctor" data-actividad="${act.id}" data-fecha="${fecha}">+</button>`;
+                    }
                 }
                 html += `<td>${cellContent} ${btnAdd}</td>`;
             }
             html += '</tr>';
         });
-        html += '</tbody></table>';
+        html += '</tbody></table></form>';
         $('#calendario-matriz').html(html);
 
-        // Inicializar DataTables si la tabla existe
-        if ($('.matriz-asignaciones').length) {
+        // Inicializar DataTables si la tabla existe y DataTables está disponible
+        if ($('.matriz-asignaciones').length && $.fn.DataTable) {
             if ($.fn.DataTable.isDataTable('.matriz-asignaciones')) {
                 $('.matriz-asignaciones').DataTable().destroy();
             }
@@ -200,12 +212,15 @@
             });
         }
 
-        // Evento para asignar doctor al hacer clic en +
-        $('.asignar-doctor').off('click').on('click', function () {
-            let actividadId = $(this).data('actividad');
-            let fecha = $(this).data('fecha');
+        // Evento para asignar doctor al hacer submit en el formulario de la matriz
+        $('#form-matriz').off('submit').on('submit', function (e) {
+            e.preventDefault();
+            let btn = $(document.activeElement);
+            if (!btn.hasClass('asignar-doctor')) return;
+            let actividadId = btn.data('actividad');
+            let fecha = btn.data('fecha');
             let doctorId = $('#doctorFiltro').val();
-            console.log('Intentando asignar doctor:', { actividadId, fecha, doctorId });
+            let csrfToken = $(this).find("input[name='csrf_token']").val();
             if (!doctorId) {
                 mostrarFlash('Seleccione un doctor en la cabecera.', 'warning');
                 return;
@@ -214,16 +229,14 @@
                 url: API_ASIGNAR,
                 method: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({ actividad_id: actividadId, fecha: fecha, doctor_id: doctorId }),
+                headers: { 'X-CSRFToken': csrfToken },
+                data: JSON.stringify({ actividad_id: actividadId, fecha: fecha, doctor_id: doctorId, csrf_token: csrfToken }),
                 success: function () {
                     mostrarFlash('Doctor asignado correctamente.', 'success');
                     cargarCalendario();
                 },
                 error: function (xhr) {
-                    // Log completo para depuración
-                    console.error('Error AJAX asignar doctor:', xhr);
                     let msg = 'Error al asignar doctor.';
-                    // Intentar extraer mensaje de error JSON o texto plano
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         msg = xhr.responseJSON.message;
                     } else if (xhr.responseText) {

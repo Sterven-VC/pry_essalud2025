@@ -58,3 +58,8 @@ class ModelAsignacionDoctorActividad:
         except Exception as ex:
             flash('Error al quitar doctor: ' + str(ex))
             return False
+
+    @classmethod
+    def count_doctores_por_actividad_dia(cls, db, actividad_id, fecha):
+        # Alias para compatibilidad con el backend
+        return cls.contar_doctores_en_actividad_dia(db, actividad_id, fecha)

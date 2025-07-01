@@ -1231,11 +1231,24 @@ def api_asignar_doctor():
     actividad_id = data.get('actividad_id')
     doctor_id = data.get('doctor_id')
     fecha = data.get('fecha')
-    # Validación de campos obligatorios
     if not actividad_id or not doctor_id or not fecha:
         return jsonify({'success': False, 'message': 'Faltan datos requeridos (actividad_id, doctor_id, fecha).'}), 400
     db = get_connection()
     try:
+        # Validar que la actividad existe
+        actividad = ModelActividad.get_actividad_by_id(db, actividad_id)
+        if not actividad:
+            return jsonify({'success': False, 'message': 'La actividad no existe.'}), 400
+        # Validar que el doctor existe
+        doctor = ModelDoctor.get_doctor_by_id(db, doctor_id)
+        if not doctor:
+            return jsonify({'success': False, 'message': 'El doctor no existe.'}), 400
+        # Validar que el doctor pertenece al mismo departamento que la actividad
+        if hasattr(actividad, 'departamento_id') and actividad.departamento_id:
+            if hasattr(current_user, 'departamento_id') and current_user.departamento_id:
+                if int(actividad.departamento_id) != int(current_user.departamento_id):
+                    return jsonify({'success': False, 'message': 'No puede asignar doctores a actividades de otro departamento.'}), 403
+        # Validar máximo 2 doctores
         count = ModelAsignacionDoctorActividad.count_doctores_por_actividad_dia(db, actividad_id, fecha)
         if count >= 2:
             return jsonify({'success': False, 'message': 'Máximo 2 doctores por actividad en este día.'}), 400
@@ -1330,6 +1343,59 @@ def api_doctores():
         return jsonify({'doctores': [{'id': d.id, 'nombre': d.nombre} for d in doctores]})
     finally:
         db.close()
+
+@app.route('/api/actividades_filtradas', methods=['GET'])
+@login_required
+def api_actividades_filtradas():
+    db = get_connection()
+    try:
+        departamento_id = request.args.get('departamento_id', type=int)
+        servicio_id = request.args.get('servicio_id', type=int)
+        # doctor_id y mes pueden usarse para lógica futura
+        # doctor_id = request.args.get('doctor_id', type=int)
+        # mes = request.args.get('mes')
+        def timedelta_to_str(td):
+            if isinstance(td, timedelta):
+                total_seconds = int(td.total_seconds())
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                seconds = total_seconds % 60
+                return f"{hours:02}:{minutes:02}:{seconds:02}"
+            return str(td) if td else ''
+        actividades = []
+        # Si hay servicio, filtrar por servicio
+        if servicio_id:
+            actividades = ModelActividad.get_actividades_by_servicio(db, servicio_id)
+        # Si hay departamento, traer actividades de todos los servicios de ese departamento
+        elif departamento_id:
+            servicios = ModelServicio.get_servicios_by_departamento(db, departamento_id)
+            for serv in servicios:
+                acts = ModelActividad.get_actividades_by_servicio(db, serv.id)
+                actividades.extend(acts)
+        # Si no hay filtro, traer solo actividades de los servicios del usuario actual
+        elif hasattr(current_user, 'departamento_id') and current_user.departamento_id:
+            servicios = ModelServicio.get_servicios_by_departamento(db, current_user.departamento_id)
+            for serv in servicios:
+                acts = ModelActividad.get_actividades_by_servicio(db, serv.id)
+                actividades.extend(acts)
+        # Si es admin, puede ver todo
+        elif current_user.username == 'stheff2001@gmail.com':
+            actividades = ModelActividad.get_all_actividades(db)
+        return jsonify({'actividades': [
+            {
+                'id': a.id,
+                'nombre': a.nombre,
+                'hora_inicio': timedelta_to_str(a.hora_inicio),
+                'hora_fin': timedelta_to_str(a.hora_fin)
+            } for a in actividades
+        ]})
+    finally:
+        db.close()
+
+@app.context_processor
+def inject_csrf_token():
+    from flask_wtf.csrf import generate_csrf
+    return dict(csrf_token=generate_csrf)
 
 if __name__ == '__main__':
     csrf.init_app(app)
