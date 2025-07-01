@@ -1,25 +1,25 @@
 {% extends './bases/base_navs.html' %}
 {% block head %}
-    {{ super() }}
-    <!-- CSRF token para AJAX -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+{{ super() }}
+<!-- CSRF token para AJAX -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
 {% endblock %}
 {% block body %}
 <div class="container mt-4">
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <br />
+    {% for message in messages %}
+    <div class="alert alert-primary alert-dismissible" role="alert">
+        <strong>{{ message }}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+    <div id="flash-messages-js"></div>
     <div class="row mb-3">
         <div class="col-md-3">
-            <div id="flash-messages-js"></div>
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-            <br />
-            {% for message in messages %}
-            <div class="alert alert-primary alert-dismissible" role="alert">
-                <strong>{{ message }}</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endfor %}
-            {% endif %}
-            {% endwith %}
             <label for="departamentoFiltro">Departamento:</label>
             <select id="departamentoFiltro" class="form-control">
                 {% for dep in departamentos %}
@@ -205,6 +205,7 @@
             let actividadId = $(this).data('actividad');
             let fecha = $(this).data('fecha');
             let doctorId = $('#doctorFiltro').val();
+            console.log('Intentando asignar doctor:', { actividadId, fecha, doctorId });
             if (!doctorId) {
                 mostrarFlash('Seleccione un doctor en la cabecera.', 'warning');
                 return;
@@ -215,16 +216,20 @@
                 contentType: 'application/json',
                 data: JSON.stringify({ actividad_id: actividadId, fecha: fecha, doctor_id: doctorId }),
                 success: function () {
+                    mostrarFlash('Doctor asignado correctamente.', 'success');
                     cargarCalendario();
                 },
                 error: function (xhr) {
                     // Log completo para depuración
                     console.error('Error AJAX asignar doctor:', xhr);
                     let msg = 'Error al asignar doctor.';
+                    // Intentar extraer mensaje de error JSON o texto plano
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         msg = xhr.responseJSON.message;
                     } else if (xhr.responseText) {
                         msg = xhr.responseText;
+                    } else if (xhr.statusText) {
+                        msg = xhr.statusText;
                     }
                     mostrarFlash(msg);
                 }
@@ -257,7 +262,7 @@
             contentType: 'application/json',
             data: JSON.stringify({ actividad_id: actividadId, fecha: fecha, doctor_id: doctorId }),
             success: cargarCalendario,
-            error: function(xhr) {
+            error: function (xhr) {
                 mostrarFlash(xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error al quitar doctor.');
             }
         });
