@@ -178,7 +178,7 @@
                 let asignados = asignaciones.filter(a => a.actividad_id == act.id && a.fecha == fecha);
                 let cellContent = asignados.map(a => {
                     let doc = doctores.find(d => d.id == a.doctor_id);
-                    return `<span class="badge badge-info mr-1">${doc ? doc.nombre : 'Doctor'}</span> <a href="#" class="text-danger quitar-doctor" data-actividad="${act.id}" data-fecha="${fecha}" data-doctor="${a.doctor_id}">&times;</a>`;
+                    return `<span class="badge badge-info mr-1" style="color: #111; background-color: #d1ecf1;">${doc ? doc.nombre : 'Doctor'}</span> <a href="#" class="text-danger quitar-doctor" data-actividad="${act.id}" data-fecha="${fecha}" data-doctor="${a.doctor_id}">&times;</a>`;
                 }).join('<br>');
                 let btnAdd = '';
                 if (
