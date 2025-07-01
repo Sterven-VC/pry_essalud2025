@@ -90,7 +90,7 @@
     <div class="card">
         <div class="card-body justify-content-center align-items-center table-responsive">
             <h1 class="card-title"><strong>Registros de Doctores</strong></h1>
-            <table class="table table-hover">
+            <table id="tabla-doctores" class="table table-hover">
                 <thead style="text-align: center;">
                     <tr>
                         <th>ID</th>
@@ -130,6 +130,19 @@
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.DataTable) {
+            $('#tabla-doctores').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+                },
+                pageLength: 10,
+                lengthChange: false
+            });
+        }
+    });
+</script>
 <script>
     function loadData(id) {
         fetch(`/doctores/${id}`)

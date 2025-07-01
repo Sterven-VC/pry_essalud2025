@@ -11,11 +11,15 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/img_logoCU1.png') }}">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.css" />
-    <script src="https://cdn.datatables.net/2.3.2/js/dataTables.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/2.3.2/js/dataTables.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery.dataTables.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dataTables.bootstrap4.js') }}"></script>
     {% block customCSS %}
     {% endblock %}
+    <!-- CSRF token para AJAX global -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
 </head>
 
@@ -127,11 +131,9 @@
 
     <!-- container-scroller -->
     <script src="{{ url_for('static', filename='vendors/base/vendor.bundle.base.js') }}"></script>
-    <!-- canvas de opciones - vista - movil -->
     <script src="{{ url_for('static', filename='js/off-canvas.js') }}"></script>
-    <!-- Muestra contenido cuando la barra de opciones esta plegado -->
     <script src="{{ url_for('static', filename='js/hoverable-collapse.js') }}"></script>
-    <!-- Funcionalidad de plegar menu de opciones -->
+    <script src="{{ url_for('static', filename='js/jquery.cookie.js') }}"></script>
     <script src="{{ url_for('static', filename='js/template.js') }}"></script>
 
     <!-- Enlazar los archivos de DataTables CSS y JS -->

@@ -106,6 +106,19 @@
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.DataTable) {
+            $('.table-hover').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+                },
+                pageLength: 10,
+                lengthChange: false
+            });
+        }
+    });
+</script>
 
 <form action="{{ url_for('update_servicio') }}" method="POST" enctype="multipart/form-data">
     <div class="modal fade" id="modal_editar" tabindex="-1" aria-labelledby="modal_editarLabel" aria-hidden="true">

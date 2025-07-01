@@ -12,7 +12,7 @@ class ModelAsignacionDoctorActividad:
             cursor.close()
             return True
         except Exception as ex:
-            flash('Error al asignar doctor: ' + str(ex))
+            flash('Error al asignar doctorssds: ' + str(ex))
             return False
 
     @classmethod
